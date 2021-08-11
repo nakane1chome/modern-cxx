@@ -1,1 +1,1 @@
-# modern-cxx
+Experiments in modern C++.
