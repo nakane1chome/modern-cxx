@@ -33,4 +33,5 @@ int main() {
     while (scheduler::update(true)) {}
 
     std::cout << "main(): EXIT\n" ;
+    return 0;
 }
