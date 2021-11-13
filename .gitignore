@@ -1,3 +1,9 @@
+# Emacs
+*~
+
+# Build dirs
+coro/riscv_baremetal/build/
+
 # Prerequisites
 *.d
 
