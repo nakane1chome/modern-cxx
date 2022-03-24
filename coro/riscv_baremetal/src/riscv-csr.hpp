@@ -555,10 +555,17 @@ namespace riscv {
         
             /** Atomic modify and set bits from immediate for mstatus */
             static void set_bits_imm(const uint8_t mask) {
+#ifdef  __NO_INLINE__ 
+                __asm__ volatile ("csrrs    zero, mstatus, %0"  
+                                  : /* output: none */ 
+                                  : "r" (mask)  /* input : register */
+                                  : /* clobbers: none */);
+#else
                 __asm__ volatile ("csrrsi    zero, mstatus, %0"  
                                   : /* output: none */ 
                                   : "i" (mask)  /* input : register */
                                   : /* clobbers: none */);
+#endif
             }
             /** Atomic read and then and set bits from immediate for mstatus */
             static uint_xlen_t read_set_bits_imm(const uint8_t mask) {
@@ -571,10 +578,18 @@ namespace riscv {
             }
             /** Atomic modify and clear bits from immediate for mstatus */
             static void clr_bits_imm(const uint8_t mask) {
+#ifdef  __NO_INLINE__ 
+                __asm__ volatile ("csrrc    zero, mstatus, %0"  
+                                  : /* output: none */ 
+                                  : "r" (mask)  /* input : register */
+                                  : /* clobbers: none */);
+
+#else
                 __asm__ volatile ("csrrci    zero, mstatus, %0"  
                                   : /* output: none */ 
                                   : "i" (mask)  /* input : register */
                                   : /* clobbers: none */);
+#endif
             }
             /** Atomic read and then and clear bits from immediate for mstatus */
             static uint_xlen_t read_clr_bits_imm(const uint8_t mask) {
