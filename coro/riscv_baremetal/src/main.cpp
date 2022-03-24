@@ -40,9 +40,10 @@ struct mtimer_clock {
     static constexpr bool is_steady = true;
 
     static time_point now() noexcept {
-        time_point epoch;
+        time_point epoch(duration::zero());
         auto duration_since_epoch =  mtimer.get_time<duration>();
-        return epoch + duration_since_epoch;
+        auto retval = epoch + duration_since_epoch;
+        return retval;
     }
 };
 
@@ -59,7 +60,7 @@ auto operator co_await(std::chrono::microseconds delay)
 nop_task resuming_on_delay(std::chrono::microseconds period, volatile uint32_t &resume_count) {
     for (auto i=0; i<10; i++) {
         co_await  period;
-        resume_count=i;
+        resume_count=i+1;
     }
 }
 
@@ -68,16 +69,13 @@ int main(void) {
     // Global interrupt disable
     riscv::csrs.mstatus.mie.clr();
 
-    // Setup timer for 1 second interval
+
     timestamp = mtimer.get_time<driver::timer<>::timer_ticks>().count();
-    mtimer.set_time_cmp(std::chrono::seconds{1});
+    // Timer will fire immediately
+     mtimer.set_time_cmp(mtimer_clock::duration::zero());
     // Setup the IRQ handler entry point
     riscv::csrs.mtvec.write( reinterpret_cast<std::uintptr_t>(irq_entry));
 
-    // Timer interrupt enable
-    riscv::csrs.mie.mti.set();
-    // Global interrupt enable
-    riscv::csrs.mstatus.mie.set();
 
     // Test coro
 
@@ -87,18 +85,25 @@ int main(void) {
     auto t1 = resuming_on_delay(200ms, resume_count_200);
     // As we are not in a task, at this point the loops have not completed, but have placed work in the schedule.
 
+    // Timer interrupt enable
+    riscv::csrs.mie.mti.set();
+    // Global interrupt enable
+    riscv::csrs.mstatus.mie.set();
+
 
     // Busy loop
     do {
         // Get a delay to the next co-routine wakup
 
         auto [pending, delay] =  scheduler<mtimer_clock>::update();
+        mtimer.set_time_cmp(delay);
+        // Timer interrupt enable
+        riscv::csrs.mie.mti.set();
 
         // Wait for the timer interrupt if 
         // TODO - we should put WFI in a critical section.
-        if (pending && (delay != mtimer_clock::duration::zero()))  {
+        if (pending && (delay !=  mtimer_clock::duration::zero()))  {
             // Timer exception, 
-            mtimer.set_time_cmp(delay);
             __asm__ volatile ("wfi");  
         }
 
@@ -119,6 +124,9 @@ static void irq_entry(void)  {
         switch (this_cause) {
         case riscv::interrupts::mti :
             timestamp = mtimer.get_time<driver::timer<>::timer_ticks>().count();
+            // Timer interrupt disable
+            riscv::csrs.mie.mti.clr();
+
             break;
         }
     }
