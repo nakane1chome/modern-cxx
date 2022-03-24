@@ -11,7 +11,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 # specify the C++ standard
 set(CMAKE_CXX_FLAGS "\
   -std=c++20 \
-  -Os \
+  -O0 \
   -g \
   -Wall \
   -fcoroutines \
@@ -30,6 +30,7 @@ set(CMAKE_CXX_FLAGS "\
   -Wzero-as-null-pointer-constant \
 ")
 set ( STACK_SIZE 0xf00 )
+set ( HEAP_SIZE 0xf00)
 set ( TARGET main )
 
 # add the executable
@@ -41,7 +42,7 @@ set_target_properties(${TARGET}.elf PROPERTIES LINK_DEPENDS "${LINKER_SCRIPT}")
 target_include_directories(${TARGET}.elf PRIVATE ../include/ )
 
 # Linker control
-SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -nostartfiles   -fno-exceptions  -Xlinker --defsym=__stack_size=${STACK_SIZE} -T ${LINKER_SCRIPT} -Wl,-Map=${TARGET}.map")
+SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -nostartfiles   -fno-exceptions  -Xlinker --defsym=__heap_size=${HEAP_SIZE}  -Xlinker --defsym=__stack_size=${STACK_SIZE} -T ${LINKER_SCRIPT} -Wl,-Map=${TARGET}.map")
 
 # Post processing command to create a disassembly file 
 add_custom_command(TARGET ${TARGET}.elf POST_BUILD
