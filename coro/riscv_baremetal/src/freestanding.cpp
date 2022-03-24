@@ -19,7 +19,7 @@ namespace {
 
 void* operator new(std::size_t size) {
     std::size_t start_offset = heap_offset.fetch_add(size, std::memory_order_relaxed);
-    return reinterpret_cast<void*>(metal_segment_heap_target_start + start_offset);
+    return reinterpret_cast<void*>(&metal_segment_heap_target_start + start_offset);
 }
 void operator delete(void*) {
     // Delete does nothing..
@@ -36,3 +36,17 @@ extern "C" void *memcpy(void *dst, const void * src, std::size_t n) {
 }
 
 
+extern "C" void *memmove(void *str1, const void *str2, size_t n) {
+    // This is not good.
+    return memcpy(str1, str2, n);
+}
+
+
+//extern "C" void __builtin_coro_resume(void *) {
+//}
+//extern "C" void __builtin_coro_destroy(void *) {
+//}
+//extern "C" bool __builtin_coro_done(void *) {
+//    return 0;
+//}
+//
